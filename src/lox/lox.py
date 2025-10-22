@@ -3,8 +3,7 @@ import logging
 from typing import List, Union
 
 from lox.scanner import Scanner
-from lox.token import Token
-from lox.tokentype import TokenType
+from lox.token import Token, TokenType
 from utils import validate_args
 
 had_error = False
