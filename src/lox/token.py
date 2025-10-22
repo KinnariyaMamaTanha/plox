@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Any
 
 
 class TokenType(Enum):
@@ -78,7 +77,9 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(self, type: TokenType, lexeme: str, literal: object, line: int) -> None:
+    def __init__(
+        self, type: TokenType, lexeme: str, literal: object, line: int
+    ) -> None:
         self.type: TokenType = type
         self.line: int = line
         self.lexeme: str = lexeme

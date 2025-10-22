@@ -15,6 +15,6 @@ def validate_args(args):
 
     # If path is provided, check if the file exists
     if path is not None and not os.path.isfile(path):
-            raise FileNotFoundError(f"The file at path '{path}' does not exist.")
+        raise FileNotFoundError(f"The file at path '{path}' does not exist.")
 
     print("All checks passed!")
