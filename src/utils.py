@@ -1,4 +1,7 @@
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def validate_args(args):
@@ -17,4 +20,4 @@ def validate_args(args):
     if path is not None and not os.path.isfile(path):
         raise FileNotFoundError(f"The file at path '{path}' does not exist.")
 
-    print("All checks passed!")
+    logger.info("All checks passed!")

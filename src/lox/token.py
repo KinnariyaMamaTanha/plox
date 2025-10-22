@@ -14,7 +14,7 @@ class TokenType(Enum):
     | BANG_EQUAL   | !=        | EQUAL      | =          |
     | EQUAL_EQUAL  | ==        | GREATER    | >          |
     | GREATER_EQUAL| >=        | LESS       | <          |
-    | LESS_EQUAL   | <=        | IDENTIFIER |            |
+    | LESS_EQUAL   | <=        | IDENTIFIER | a          |
     | STRING       | "abc"     | NUMBER     | 123, 12.34 |
     | AND          | and       | CLASS      | class      |
     | ELSE         | else      | FALSE      | false      |
