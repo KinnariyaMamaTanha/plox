@@ -1,4 +1,5 @@
 from typing import List, Union
+
 from lox.abc import Expr
 from lox.expr import Binary, Grouping, Literal, Unary
 from lox.visitor import ExprVisitor

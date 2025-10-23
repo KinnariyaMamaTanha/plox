@@ -6,6 +6,7 @@ from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
 from lox.error import has_error
+from lox.parser import Parser
 from lox.scanner import Scanner
 from lox.token import Token
 from utils import validate_args
@@ -62,9 +63,13 @@ def run_prompt():
 def run(source: str):
     scanner = Scanner(source)
     tokens: List[Token] = scanner.scan_tokens()
+    parser = Parser(tokens)
+    expression = parser.parse()
+    global has_error
+    if has_error:
+        return
 
-    for token in tokens:
-        print(token)
+    print(expression)
 
 
 if __name__ == "__main__":

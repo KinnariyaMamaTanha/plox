@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -76,14 +77,9 @@ class TokenType(Enum):
     EOF = "EOF"
 
 
+@dataclass
 class Token:
-    def __init__(
-        self, type: TokenType, lexeme: str, literal: object, line: int
-    ) -> None:
-        self.type: TokenType = type
-        self.line: int = line
-        self.lexeme: str = lexeme
-        self.literal: object = literal
-
-    def __str__(self) -> str:
-        return f"{self.type} {self.lexeme} {self.literal}"
+    type: TokenType
+    lexeme: str
+    literal: object
+    line: int

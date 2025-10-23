@@ -1,7 +1,7 @@
 from typing import List
 
-from lox.token import Token, TokenType
 from lox.error import error
+from lox.token import Token, TokenType
 
 
 class Scanner:
