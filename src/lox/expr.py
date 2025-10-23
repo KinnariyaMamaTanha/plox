@@ -1,43 +1,43 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from lox.abc import ExprOrStmt
-from lox.visitor import ExprVisitor
+from lox.abc import Expr
 from lox.token import Token
+from lox.visitor import ExprVisitor
 
 
 @dataclass
-class Binary(ExprOrStmt):
-    left: ExprOrStmt
+class Binary(Expr):
+    left: Expr
     op: Token
-    right: ExprOrStmt
+    right: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_binary(self)
 
 
 @dataclass
-class Assign(ExprOrStmt):
+class Assign(Expr):
     name: Token
-    value: ExprOrStmt
+    value: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_assign(self)
 
 
 @dataclass
-class Call(ExprOrStmt):
-    callee: ExprOrStmt
+class Call(Expr):
+    callee: Expr
     paren: Token
-    arguments: List[ExprOrStmt] = field(default_factory=list)
+    arguments: List[Expr] = field(default_factory=list)
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_call(self)
 
 
 @dataclass
-class Get(ExprOrStmt):
-    object: ExprOrStmt
+class Get(Expr):
+    object: Expr
     name: Token
 
     def accept(self, visitor: ExprVisitor):
@@ -45,15 +45,15 @@ class Get(ExprOrStmt):
 
 
 @dataclass
-class Grouping(ExprOrStmt):
-    expression: ExprOrStmt
+class Grouping(Expr):
+    expression: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_grouping(self)
 
 
 @dataclass
-class Literal(ExprOrStmt):
+class Literal(Expr):
     value: object
 
     def accept(self, visitor: ExprVisitor):
@@ -61,27 +61,27 @@ class Literal(ExprOrStmt):
 
 
 @dataclass
-class Logical(ExprOrStmt):
-    left: ExprOrStmt
+class Logical(Expr):
+    left: Expr
     op: Token
-    right: ExprOrStmt
+    right: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_logical(self)
 
 
 @dataclass
-class Set(ExprOrStmt):
-    object: ExprOrStmt
+class Set(Expr):
+    object: Expr
     name: Token
-    value: ExprOrStmt
+    value: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_set(self)
 
 
 @dataclass
-class Super(ExprOrStmt):
+class Super(Expr):
     keyword: Token
     method: Token
 
@@ -90,7 +90,7 @@ class Super(ExprOrStmt):
 
 
 @dataclass
-class Self(ExprOrStmt):
+class Self(Expr):
     keyword: Token
 
     def accept(self, visitor: ExprVisitor):
@@ -98,16 +98,16 @@ class Self(ExprOrStmt):
 
 
 @dataclass
-class Unary(ExprOrStmt):
+class Unary(Expr):
     op: Token
-    right: ExprOrStmt
+    right: Expr
 
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_unary(self)
 
 
 @dataclass
-class Variable(ExprOrStmt):
+class Variable(Expr):
     name: Token
 
     def accept(self, visitor: ExprVisitor):

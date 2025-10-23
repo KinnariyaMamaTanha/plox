@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
-
-
-class Visitor(ABC):
+class Visitor:
     pass
 
 
-class ExprOrStmt(ABC):
-    @abstractmethod
+class Expr:
     def accept(self, visitor: Visitor):
-        pass
+        raise NotImplementedError()
+
+
+class Stmt:
+    def accept(self, visitor: Visitor):
+        raise NotImplementedError()
