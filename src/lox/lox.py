@@ -2,6 +2,9 @@ import argparse
 import logging
 from typing import List
 
+from prompt_toolkit import prompt
+from prompt_toolkit.history import InMemoryHistory
+
 from lox.error import has_error
 from lox.scanner import Scanner
 from lox.token import Token
@@ -35,15 +38,23 @@ def run_prompt():
     Start a REPL (Read-Eval-Print Loop) for Lox.
     """
     global has_error
+    history = InMemoryHistory()
+    print("======================================================")
+    print("Welcome to plox! Press Ctrl+D or type 'exit' to leave.")
+    print("======================================================")
+
     while True:
         try:
-            source: str = input("plox> ")
-            if source == "exit":
+            source: str = prompt("plox> ", history=history)
+            if source.strip() == "exit":
                 break
-            run(source)
-            has_error = False
+            if source.strip():
+                run(source)
+                has_error = False
         except EOFError:
             break
+        except KeyboardInterrupt:
+            continue
         except Exception as e:
             logger.error(f"An error occurred: {e}")
 

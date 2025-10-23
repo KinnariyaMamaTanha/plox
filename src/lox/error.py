@@ -1,6 +1,7 @@
-from typing import Union
-from lox.token import Token, TokenType
 import logging
+from typing import Union
+
+from lox.token import Token, TokenType
 
 logger = logging.getLogger(__name__)
 

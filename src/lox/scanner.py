@@ -1,4 +1,3 @@
-from curses.ascii import isalnum, isalpha, isdigit
 from typing import List
 
 from lox.token import Token, TokenType
