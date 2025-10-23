@@ -23,13 +23,21 @@ class Parser:
 
     def expression(self) -> Expr:
         """
-        expression → equality
+        expression → equality ( "," equality )*
         """
-        return self.equality()
+        return self.comma()
+
+    def comma(self) -> Expr:
+        expr = self.equality()
+        while self.match(TokenType.COMMA):
+            op = self.previous
+            right = self.equality()
+            expr = Binary(left=expr, op=op, right=right)
+        return expr
 
     def equality(self) -> Expr:
         """
-        equality → comparison ( ( "!=" | "==" ) comparison )* ;
+        equality → comparison ( ( "!=" | "==" ) comparison )*
         """
         expr = self.comparison()
 
@@ -42,7 +50,7 @@ class Parser:
 
     def comparison(self) -> Expr:
         """
-        comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+        comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
         """
         expr = self.term()
 
@@ -62,7 +70,7 @@ class Parser:
 
     def term(self) -> Expr:
         """
-        term → factor ( ( "-" | "+" ) factor )* ;
+        term → factor ( ( "-" | "+" ) factor )*
         """
         expr = self.factor()
 
@@ -75,7 +83,7 @@ class Parser:
 
     def factor(self) -> Expr:
         """
-        factor → unary ( ( "/" | "*" ) unary )* ;
+        factor → unary ( ( "/" | "*" ) unary )*
         """
         expr = self.unary()
 
@@ -88,7 +96,7 @@ class Parser:
 
     def unary(self) -> Expr:
         """
-        unary → ( "!" | "-" ) unary | primary ;
+        unary → ( "!" | "-" ) unary | primary
         """
         if self.match([TokenType.BANG, TokenType.MINUS]):
             op = self.previous
@@ -99,7 +107,7 @@ class Parser:
 
     def primary(self) -> Expr:
         """
-        primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+        primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
         """
         if self.match(TokenType.FALSE):
             return Literal(False)
@@ -113,6 +121,39 @@ class Parser:
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expr)
+        elif self.match(TokenType.PLUS):
+            self.error(self.previous, "Missing left-hand operand.")
+            self.term()
+            return None
+        elif self.match(
+            [
+                TokenType.SLASH,
+                TokenType.STAR,
+            ]
+        ):
+            self.error(self.previous, "Missing left-hand operand.")
+            self.factor()
+            return None
+        elif self.match(
+            [
+                TokenType.EQUAL_EQUAL,
+                TokenType.BANG_EQUAL,
+            ]
+        ):
+            self.error(self.previous, "Missing left-hand operand.")
+            self.equality()
+            return None
+        elif self.match(
+            [
+                TokenType.GREATER,
+                TokenType.GREATER_EQUAL,
+                TokenType.LESS,
+                TokenType.LESS_EQUAL,
+            ]
+        ):
+            self.error(self.previous, "Missing left-hand operand.")
+            self.comparison()
+            return None
 
         raise self.error(self.peek, "Expect expression.")
 
