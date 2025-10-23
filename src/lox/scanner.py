@@ -11,7 +11,7 @@ class Scanner:
         self.start: int = 0
         self.current: int = 0
         self.line: int = 1
-        self.keyword2type = {
+        self.keywords = {
             "and": TokenType.AND,
             "class": TokenType.CLASS,
             "else": TokenType.ELSE,
@@ -117,7 +117,7 @@ class Scanner:
             self.advance()
 
         text = self.source[self.start : self.current]
-        type = self.keyword2type.get(text)
+        type = self.keywords.get(text)
         if type is None:
             type = TokenType.IDENTIFIER
 
