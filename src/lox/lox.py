@@ -2,10 +2,11 @@ import argparse
 import logging
 from typing import List
 
+from lox.interpreter import Interpreter
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
-from lox.error import has_error
+from lox.error import has_error, has_runtime_error
 from lox.parser import Parser
 from lox.scanner import Scanner
 from lox.token import Token
@@ -32,6 +33,9 @@ def run_file(path):
     global has_error
     if has_error:
         exit(65)
+    global has_runtime_error
+    if has_runtime_error:
+        exit(70)
 
 
 def run_prompt():
@@ -68,8 +72,11 @@ def run(source: str):
     global has_error
     if has_error:
         return
+    interpreter = Interpreter()
+    value = interpreter.interpret(expression)
 
     print(expression)
+    print(f"Expression value = {value}")
 
 
 if __name__ == "__main__":

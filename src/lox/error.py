@@ -5,7 +5,9 @@ from lox.token import Token, TokenType
 
 logger = logging.getLogger(__name__)
 
-has_error = False # global error flag
+has_error = False  # global error flag
+has_runtime_error = False  # global runtime error flag
+
 
 def error(line_or_token: Union[int, Token], message: str) -> None:
     if isinstance(line_or_token, int):
@@ -23,3 +25,16 @@ def report(line: int, where: str, message: str) -> None:
     logger.error(f"[line {line}] Error {where}: {message}")
     global has_error
     has_error = True
+
+
+class PloxRuntimeError(RuntimeError):
+    def __init__(self, token: Token, message: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.token = token
+        self.message = message
+
+
+def runtime_error(error: PloxRuntimeError):
+    logger.error(error.message + f"\n[line {error.token.line}]")
+    global has_runtime_error
+    has_runtime_error = True

@@ -6,7 +6,7 @@ from lox.expr import Binary, Grouping, Literal, Unary
 from lox.token import Token, TokenType
 
 
-class ParseError(RuntimeError):
+class ParseError(Exception):
     pass
 
 
