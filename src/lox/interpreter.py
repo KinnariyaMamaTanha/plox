@@ -2,9 +2,9 @@ from typing import List, Union
 
 from lox.abc import Expr, Stmt
 from lox.environment import Environment
-from lox.error import PloxRuntimeError, runtime_error
+from lox.error import BreakException, ContinueException, PloxRuntimeError, runtime_error
 from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
-from lox.stmt import Block, Expression, If, Print, Var
+from lox.stmt import Block, Continue, Expression, If, Print, Var, While
 from lox.token import Token, TokenType
 from lox.visitor import ExprVisitor, StmtVisitor
 
@@ -43,6 +43,36 @@ class Interpreter(ExprVisitor, StmtVisitor):
         elif stmt.else_branch is not None:
             self.execute(stmt.else_branch)
         return None
+
+    def visit_logical(self, expr: Binary):
+        left = self.evaluate(expr.left)
+
+        if expr.op.type == TokenType.OR:
+            if self._is_truthy(left):
+                return left
+        else:
+            if not self._is_truthy(left):
+                return left
+
+        right = self.evaluate(expr.right)
+        return right
+
+    def visit_while(self, stmt: While):
+        while self._is_truthy(self.evaluate(stmt.condition)):
+            try:
+                self.execute(stmt.body)
+            except ContinueException:
+                # Skip remainder of the body and reevaluate condition
+                continue
+            except BreakException:
+                break
+        return None
+
+    def visit_break(self, stmt):
+        raise BreakException()
+
+    def visit_continue(self, stmt: Continue):
+        raise ContinueException()
 
     def execute_block(self, statements: List[Stmt], environment: Environment):
         previous_env = self.environment
@@ -131,10 +161,6 @@ class Interpreter(ExprVisitor, StmtVisitor):
                 return left <= right
             case TokenType.COMMA:
                 return right
-            case TokenType.AND:
-                return self._is_truthy(left) and self._is_truthy(right)
-            case TokenType.OR:
-                return self._is_truthy(left) or self._is_truthy(right)
 
     def check(self, operator: Token, operands: Union[object, List[object]]):
         if not isinstance(operands, list):

@@ -25,7 +25,8 @@ class TokenType(Enum):
     | RETURN       | return    | SUPER      | super      |
     | THIS         | this      | TRUE       | true       |
     | VAR          | var       | WHILE      | while      |
-    | EOF          |           |            |            |
+    | EOF          |           | BREAK      | break      |
+    | CONTINUE     | continue  |            |            |
     """
 
     # Single-character tokens.
@@ -73,6 +74,8 @@ class TokenType(Enum):
     TRUE = "TRUE"
     VAR = "VAR"
     WHILE = "WHILE"
+    BREAK = "BREAK"
+    CONTINUE = "CONTINUE"
 
     EOF = "EOF"
 

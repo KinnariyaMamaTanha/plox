@@ -2,8 +2,8 @@ from typing import List, Union
 
 from lox.abc import Expr, Stmt
 from lox.error import error
-from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
-from lox.stmt import Block, Expression, If, Print, Var
+from lox.expr import Assign, Binary, Grouping, Literal, Logical, Unary, Variable
+from lox.stmt import Block, Break, Continue, Expression, If, Print, Var, While
 from lox.token import Token, TokenType
 
 
@@ -15,6 +15,7 @@ class Parser:
     def __init__(self, tokens: List[Token]) -> None:
         self.tokens = tokens
         self.current = 0
+        self.loop_depth = 0
 
     def parse(self) -> List[Stmt]:
         statements = []
@@ -48,10 +49,18 @@ class Parser:
 
     def statement(self) -> Stmt:
         """
-        statement → exprStmt | printStmt | block ;
+        statement → ifStmt | whileStmt | forStmt | breakStmt | continueStmt | exprStmt | printStmt | block ;
         """
         if self.match(TokenType.IF):
             return self.if_statement()
+        elif self.match(TokenType.WHILE):
+            return self.while_statement()
+        elif self.match(TokenType.FOR):
+            return self.for_statement()
+        elif self.match(TokenType.BREAK):
+            return self.break_statement()
+        elif self.match(TokenType.CONTINUE):
+            return self.continue_statement()
         elif self.match(TokenType.PRINT):
             return self.print_statement()
         elif self.match(TokenType.LEFT_BRACE):
@@ -84,6 +93,81 @@ class Parser:
 
         return If(condition, then_branch, else_branch)
 
+    def break_statement(self) -> Stmt:
+        """
+        breakStmt → "break" ";" ;
+        """
+        if self.loop_depth == 0:
+            raise self.error(self.previous, "Cannot use 'break' outside of a loop.")
+        self.consume(TokenType.SEMICOLON, "Expect ';' after 'break'.")
+        return Break()
+
+    def continue_statement(self) -> Stmt:
+        """
+        continueStmt → "continue" ";" ;
+        """
+        if self.loop_depth == 0:
+            raise self.error(self.previous, "Cannot use 'continue' outside of a loop.")
+        self.consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.")
+        return Continue()
+
+    def while_statement(self) -> Stmt:
+        """
+        whileStmt → "while" "(" expression ")" statement ;
+        """
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        condition = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+        try:
+            self.loop_depth += 1
+            body = self.statement()
+            return While(condition, body)
+        finally:
+            self.loop_depth -= 1
+
+    def for_statement(self) -> Stmt:
+        """
+        forStmt → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+        """
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+
+        if self.match(TokenType.SEMICOLON):
+            initializer = None
+        elif self.match(TokenType.VAR):
+            initializer = self.var_decl()
+        else:
+            initializer = self.expression_statement()
+
+        if self.match(TokenType.SEMICOLON):
+            condition = None
+        else:
+            condition = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+        if self.match(TokenType.SEMICOLON):
+            increment = None
+        else:
+            increment = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        try:
+            self.loop_depth += 1
+            body = self.statement()
+
+            if increment is not None:
+                body = Block([body, Expression(increment)])
+
+            if condition is None:
+                condition = Literal(True)
+            body = While(condition, body)
+
+            if initializer is not None:
+                body = Block([initializer, body])
+
+            return body
+        finally:
+            self.loop_depth -= 1
+
     def print_statement(self) -> Stmt:
         """
         printStmt → "print" expression ";" ;
@@ -108,9 +192,9 @@ class Parser:
 
     def assignment(self) -> Expr:
         """
-        assignment → IDENTIFIER "=" assignment | equality ;
+        assignment → IDENTIFIER "=" assignment | logic_or ;
         """
-        expr = self.equality()
+        expr = self.logic_or()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous
@@ -122,6 +206,28 @@ class Parser:
 
             self.error(equals, "Invalid assignment target.")
 
+        return expr
+
+    def logic_or(self) -> Expr:
+        """
+        logic_or → logic_and ( "or" logic_and )*
+        """
+        expr = self.logic_and()
+        while self.match(TokenType.OR):
+            op = self.previous
+            right = self.logic_and()
+            expr = Logical(left=expr, op=op, right=right)
+        return expr
+
+    def logic_and(self) -> Expr:
+        """
+        logic_and → equality ( "and" equality )*
+        """
+        expr = self.equality()
+        while self.match(TokenType.AND):
+            op = self.previous
+            right = self.equality()
+            expr = Logical(left=expr, op=op, right=right)
         return expr
 
     def equality(self) -> Expr:

@@ -58,3 +58,13 @@ def test_scan_token_single_call_sequences():
     assert len(scanner.tokens) == 1
     assert scanner.tokens[0].type == TokenType.BANG
     assert scanner.tokens[0].lexeme == "!"
+
+
+def test_scan_keyword_continue():
+    scanner = Scanner("continue;")
+    toks = scanner.scan_tokens()
+    types = [t.type for t in toks]
+    assert types[0] == TokenType.CONTINUE
+    assert toks[0].lexeme == "continue"
+    assert types[1] == TokenType.SEMICOLON
+    assert types[-1] == TokenType.EOF

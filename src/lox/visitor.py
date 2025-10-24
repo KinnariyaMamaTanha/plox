@@ -57,3 +57,12 @@ class StmtVisitor(Visitor):
 
     def visit_if(self, stmt):
         pass
+
+    def visit_while(self, stmt):
+        pass
+
+    def visit_break(self, stmt):
+        pass
+
+    def visit_continue(self, stmt):
+        pass

@@ -28,6 +28,8 @@ class Scanner:
             "true": TokenType.TRUE,
             "var": TokenType.VAR,
             "while": TokenType.WHILE,
+            "break": TokenType.BREAK,
+            "continue": TokenType.CONTINUE,
         }
 
     def scan_tokens(self) -> List[Token]:

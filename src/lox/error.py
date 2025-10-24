@@ -33,6 +33,13 @@ class PloxRuntimeError(RuntimeError):
         self.token = token
         self.message = message
 
+class BreakException(Exception):
+    pass
+
+
+class ContinueException(Exception):
+    pass
+
 
 def runtime_error(error: PloxRuntimeError):
     logger.error(error.message + f"\n[line {error.token.line}]")

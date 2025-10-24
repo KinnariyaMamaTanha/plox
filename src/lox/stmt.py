@@ -55,3 +55,25 @@ class If(Stmt):
 
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_if(self)
+
+
+@dataclass
+class While(Stmt):
+    condition: Expr
+    body: Stmt
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_while(self)
+
+@dataclass
+class Break(Stmt):
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_break(self)
+
+
+@dataclass
+class Continue(Stmt):
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_continue(self)
