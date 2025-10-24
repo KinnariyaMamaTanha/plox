@@ -1,10 +1,13 @@
+from dataclasses import dataclass, field
+
 from lox.error import PloxRuntimeError
 from lox.token import Token
 
 
+@dataclass
 class Environment:
-    def __init__(self) -> None:
-        self.mapping = {}
+    mapping: dict = field(default_factory=dict)
+    enclosing: "Environment | None" = None
 
     def define(self, name: str, value: object) -> None:
         self.mapping[name] = value
@@ -12,16 +15,15 @@ class Environment:
     def get(self, name: Token):
         if name.lexeme in self.mapping:
             return self.mapping[name.lexeme]
+        if self.enclosing is not None:
+            return self.enclosing.get(name)
         raise PloxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
 
     def assign(self, name: Token, value: object) -> None:
         if name.lexeme in self.mapping:
             self.mapping[name.lexeme] = value
             return
+        if self.enclosing is not None:
+            self.enclosing.assign(name, value)
+            return
         raise PloxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
-
-    def __str__(self) -> str:
-        return str(self.mapping)
-
-    def __repr__(self) -> str:
-        return f"Environment({self.mapping})"

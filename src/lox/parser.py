@@ -3,7 +3,7 @@ from typing import List, Union
 from lox.abc import Expr, Stmt
 from lox.error import error
 from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
-from lox.stmt import Expression, Print, Var
+from lox.stmt import Block, Expression, Print, Var
 from lox.token import Token, TokenType
 
 
@@ -48,12 +48,24 @@ class Parser:
 
     def statement(self) -> Stmt:
         """
-        statement → exprStmt | printStmt ;
+        statement → exprStmt | printStmt | block ;
         """
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        elif self.match(TokenType.LEFT_BRACE):
+            return self.block()
         else:
             return self.expression_statement()
+
+    def block(self) -> Stmt:
+        """
+        block → "{" declaration* "}" ;
+        """
+        statements = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.finished:
+            statements.append(self.declaration())
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return Block(statements)
 
     def print_statement(self) -> Stmt:
         """

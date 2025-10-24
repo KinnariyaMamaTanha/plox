@@ -7,7 +7,10 @@ from lox.visitor import StmtVisitor
 
 @dataclass
 class Block(Stmt):
-    pass
+    statements: list[Stmt]
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_block(self)
 
 
 @dataclass
@@ -25,6 +28,7 @@ class Print(Stmt):
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_print(self)
 
+
 @dataclass
 class Var(Stmt):
     name: Token
@@ -32,6 +36,7 @@ class Var(Stmt):
 
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_var(self)
+
 
 @dataclass
 class Assignment(Stmt):

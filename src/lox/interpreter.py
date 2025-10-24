@@ -4,7 +4,7 @@ from lox.abc import Expr, Stmt
 from lox.environment import Environment
 from lox.error import PloxRuntimeError, runtime_error
 from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
-from lox.stmt import Expression, Print, Var
+from lox.stmt import Block, Expression, Print, Var
 from lox.token import Token, TokenType
 from lox.visitor import ExprVisitor, StmtVisitor
 
@@ -32,6 +32,19 @@ class Interpreter(ExprVisitor, StmtVisitor):
             value = None
         self.environment.define(stmt.name.lexeme, value)
         return None
+
+    def visit_block(self, stmt: Block):
+        self.execute_block(stmt.statements, Environment(enclosing=self.environment))
+        return None
+
+    def execute_block(self, statements: List[Stmt], environment: Environment):
+        previous_env = self.environment
+        try:
+            self.environment = environment
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous_env
 
     def visit_variable(self, expr: Variable):
         return self.environment.get(expr.name)

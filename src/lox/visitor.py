@@ -51,3 +51,6 @@ class StmtVisitor(Visitor):
 
     def visit_assignment(self, stmt):
         pass
+
+    def visit_block(self, stmt):
+        pass
