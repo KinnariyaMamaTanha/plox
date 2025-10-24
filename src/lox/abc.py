@@ -11,7 +11,7 @@ class Visitor:
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class Expr:
     def accept(self, visitor: Visitor):
         raise NotImplementedError()

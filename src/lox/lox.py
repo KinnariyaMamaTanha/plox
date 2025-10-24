@@ -2,12 +2,13 @@ import argparse
 import logging
 from typing import List
 
-from lox.interpreter import Interpreter
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
 from lox.error import has_error, has_runtime_error
+from lox.interpreter import Interpreter
 from lox.parser import Parser
+from lox.resolver import Resolver
 from lox.scanner import Scanner
 from lox.token import Token
 from utils import validate_args
@@ -72,7 +73,13 @@ def run(source: str):
     global has_error
     if has_error:
         return
+
     interpreter = Interpreter()
+    resolver = Resolver(interpreter)
+    resolver.resolve(statements)
+    if has_error:
+        return
+
     interpreter.interpret(statements)
 
 
