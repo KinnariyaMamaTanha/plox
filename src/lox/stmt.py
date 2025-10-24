@@ -45,3 +45,13 @@ class Assignment(Stmt):
 
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_assignment(self)
+
+
+@dataclass
+class If(Stmt):
+    condition: Expr
+    then_branch: Stmt
+    else_branch: Stmt | None
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_if(self)
