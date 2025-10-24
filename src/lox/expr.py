@@ -28,7 +28,7 @@ class Assign(Expr):
 @dataclass
 class Call(Expr):
     callee: Expr
-    paren: Token
+    paren: Token # Token for the closing parenthesis
     arguments: List[Expr] = field(default_factory=list)
 
     def accept(self, visitor: ExprVisitor):

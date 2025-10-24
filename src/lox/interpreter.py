@@ -2,16 +2,36 @@ from typing import List, Union
 
 from lox.abc import Expr, Stmt
 from lox.environment import Environment
-from lox.error import BreakException, ContinueException, PloxRuntimeError, runtime_error
-from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
-from lox.stmt import Block, Continue, Expression, If, Print, Var, While
+from lox.error import (
+    BreakException,
+    ContinueException,
+    PloxRuntimeError,
+    ReturnException,
+    runtime_error,
+)
+from lox.expr import Assign, Binary, Call, Grouping, Literal, Unary, Variable
+from lox.functions import Clock, LoxCallable, LoxFunction
+from lox.stmt import (
+    Block,
+    Continue,
+    Expression,
+    Function,
+    If,
+    Print,
+    Return,
+    Var,
+    While,
+)
 from lox.token import Token, TokenType
 from lox.visitor import ExprVisitor, StmtVisitor
 
 
 class Interpreter(ExprVisitor, StmtVisitor):
     def __init__(self) -> None:
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
+
+        self.globals.define("clock", Clock())
 
     def visit_print(self, stmt: Print):
         value = self.evaluate(stmt.expression)
@@ -161,6 +181,30 @@ class Interpreter(ExprVisitor, StmtVisitor):
                 return left <= right
             case TokenType.COMMA:
                 return right
+
+    def visit_call(self, expr: Call):
+        callee = self.evaluate(expr.callee)
+        arguments = [self.evaluate(arg) for arg in expr.arguments]
+        if not isinstance(callee, LoxCallable):
+            raise PloxRuntimeError(expr.paren, "Can only call functions and classes.")
+        func: LoxCallable = callee
+        if len(arguments) != func.arity():
+            raise PloxRuntimeError(
+                expr.paren,
+                f"Expected {func.arity()} arguments but got {len(arguments)}.",
+            )
+        return func(self, arguments)
+
+    def visit_function(self, stmt: Function):
+        fun = LoxFunction(stmt, self.environment)
+        self.environment.define(stmt.name.lexeme, fun)
+        return None
+
+    def visit_return(self, stmt: Return):
+        value = None
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+        raise ReturnException(value)
 
     def check(self, operator: Token, operands: Union[object, List[object]]):
         if not isinstance(operands, list):

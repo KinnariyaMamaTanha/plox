@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from lox.abc import Expr, Stmt
 from lox.token import Token
@@ -65,15 +66,33 @@ class While(Stmt):
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_while(self)
 
+
 @dataclass
 class Break(Stmt):
-
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_break(self)
 
 
 @dataclass
 class Continue(Stmt):
-
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_continue(self)
+
+
+@dataclass
+class Function(Stmt):
+    name: Token
+    params: List[Token] = None
+    body: List[Stmt] = None
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_function(self)
+
+
+@dataclass
+class Return(Stmt):
+    keyword: Token
+    value: Expr | None = None
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_return(self)

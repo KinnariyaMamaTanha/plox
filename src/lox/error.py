@@ -33,12 +33,18 @@ class PloxRuntimeError(RuntimeError):
         self.token = token
         self.message = message
 
+
 class BreakException(Exception):
     pass
 
 
 class ContinueException(Exception):
     pass
+
+
+class ReturnException(Exception):
+    def __init__(self, value: object):
+        self.value = value
 
 
 def runtime_error(error: PloxRuntimeError):

@@ -66,3 +66,9 @@ class StmtVisitor(Visitor):
 
     def visit_continue(self, stmt):
         pass
+
+    def visit_function(self, stmt):
+        pass
+
+    def visit_return(self, stmt):
+        pass
