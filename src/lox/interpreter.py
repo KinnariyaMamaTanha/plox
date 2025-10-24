@@ -1,26 +1,50 @@
 from typing import List, Union
 
 from lox.abc import Expr, Stmt
+from lox.environment import Environment
 from lox.error import PloxRuntimeError, runtime_error
-from lox.expr import Binary, Literal, Unary
+from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
+from lox.stmt import Expression, Print, Var
 from lox.token import Token, TokenType
 from lox.visitor import ExprVisitor, StmtVisitor
 
 
 class Interpreter(ExprVisitor, StmtVisitor):
-    def visit_print(self, stmt):
+    def __init__(self) -> None:
+        self.environment = Environment()
+
+    def visit_print(self, stmt: Print):
         value = self.evaluate(stmt.expression)
-        print(self.stringify(value))
+        if isinstance(value, bool):
+            print("true" if value else "false")
+        else:
+            print(self.stringify(value))
         return None
 
-    def visit_expression(self, stmt):
+    def visit_expression(self, stmt: Expression):
         value = self.evaluate(stmt.expression)
         return None
+
+    def visit_var(self, stmt: Var):
+        if stmt.initializer is not None:
+            value = self.evaluate(stmt.initializer)
+        else:
+            value = None
+        self.environment.define(stmt.name.lexeme, value)
+        return None
+
+    def visit_variable(self, expr: Variable):
+        return self.environment.get(expr.name)
+
+    def visit_assign(self, expr: Assign):
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
     def visit_literal(self, expr: Literal):
         return expr.value
 
-    def visit_grouping(self, expr):
+    def visit_grouping(self, expr: Grouping):
         return self.evaluate(expr.expression)
 
     def evaluate(self, expr: Expr):

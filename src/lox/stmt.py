@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from lox.abc import Expr, Stmt
+from lox.token import Token
 from lox.visitor import StmtVisitor
 
 
@@ -23,3 +24,19 @@ class Print(Stmt):
 
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_print(self)
+
+@dataclass
+class Var(Stmt):
+    name: Token
+    initializer: Expr | None
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_var(self)
+
+@dataclass
+class Assignment(Stmt):
+    name: Token
+    value: Expr
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_assignment(self)

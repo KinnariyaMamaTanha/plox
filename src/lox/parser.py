@@ -2,8 +2,8 @@ from typing import List, Union
 
 from lox.abc import Expr, Stmt
 from lox.error import error
-from lox.expr import Binary, Grouping, Literal, Unary
-from lox.stmt import Expression, Print
+from lox.expr import Assign, Binary, Grouping, Literal, Unary, Variable
+from lox.stmt import Expression, Print, Var
 from lox.token import Token, TokenType
 
 
@@ -19,8 +19,32 @@ class Parser:
     def parse(self) -> List[Stmt]:
         statements = []
         while not self.finished:
-            statements.append(self.statement())
+            statements.append(self.declaration())
         return statements
+
+    def declaration(self) -> Stmt:
+        """
+        declaration → varDecl | statement ;
+        """
+        try:
+            if self.match(TokenType.VAR):
+                return self.var_decl()
+            else:
+                return self.statement()
+        except ParseError:
+            self.synchronize()
+            return None
+
+    def var_decl(self) -> Stmt:
+        """
+        varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
+        """
+        name_token = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+        initializer = None
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name=name_token, initializer=initializer)
 
     def statement(self) -> Stmt:
         """
@@ -49,16 +73,26 @@ class Parser:
 
     def expression(self) -> Expr:
         """
-        expression → equality ( "," equality )*
+        expression → assignment ;
         """
-        return self.comma()
+        return self.assignment()
 
-    def comma(self) -> Expr:
+    def assignment(self) -> Expr:
+        """
+        assignment → IDENTIFIER "=" assignment | equality ;
+        """
         expr = self.equality()
-        while self.match(TokenType.COMMA):
-            op = self.previous
-            right = self.equality()
-            expr = Binary(left=expr, op=op, right=right)
+
+        if self.match(TokenType.EQUAL):
+            equals = self.previous
+            value = self.assignment()
+
+            if isinstance(expr, Variable):
+                name_token = expr.name
+                return Assign(name_token, value)
+
+            self.error(equals, "Invalid assignment target.")
+
         return expr
 
     def equality(self) -> Expr:
@@ -133,7 +167,7 @@ class Parser:
 
     def primary(self) -> Expr:
         """
-        primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
+        primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
         """
         if self.match(TokenType.FALSE):
             return Literal(False)
@@ -147,6 +181,8 @@ class Parser:
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expr)
+        elif self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous)
         elif self.match(TokenType.PLUS):
             self.error(self.previous, "Missing left-hand operand.")
             self.term()

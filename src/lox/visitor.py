@@ -45,3 +45,9 @@ class StmtVisitor(Visitor):
 
     def visit_expression(self, stmt):
         pass
+
+    def visit_var(self, stmt):
+        pass
+
+    def visit_assignment(self, stmt):
+        pass
