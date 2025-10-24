@@ -40,4 +40,8 @@ class ExprVisitor(Visitor):
 
 
 class StmtVisitor(Visitor):
-    pass
+    def visit_print(self, stmt):
+        pass
+
+    def visit_expression(self, stmt):
+        pass

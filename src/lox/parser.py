@@ -1,8 +1,9 @@
 from typing import List, Union
 
-from lox.abc import Expr
+from lox.abc import Expr, Stmt
 from lox.error import error
 from lox.expr import Binary, Grouping, Literal, Unary
+from lox.stmt import Expression, Print
 from lox.token import Token, TokenType
 
 
@@ -15,11 +16,36 @@ class Parser:
         self.tokens = tokens
         self.current = 0
 
-    def parse(self):
-        try:
-            return self.expression()
-        except ParseError:
-            return None
+    def parse(self) -> List[Stmt]:
+        statements = []
+        while not self.finished:
+            statements.append(self.statement())
+        return statements
+
+    def statement(self) -> Stmt:
+        """
+        statement → exprStmt | printStmt ;
+        """
+        if self.match(TokenType.PRINT):
+            return self.print_statement()
+        else:
+            return self.expression_statement()
+
+    def print_statement(self) -> Stmt:
+        """
+        printStmt → "print" expression ";" ;
+        """
+        expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(expr)
+
+    def expression_statement(self):
+        """
+        exprStmt → expression ";" ;
+        """
+        expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
 
     def expression(self) -> Expr:
         """

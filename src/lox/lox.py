@@ -68,15 +68,12 @@ def run(source: str):
     scanner = Scanner(source)
     tokens: List[Token] = scanner.scan_tokens()
     parser = Parser(tokens)
-    expression = parser.parse()
+    statements = parser.parse()
     global has_error
     if has_error:
         return
     interpreter = Interpreter()
-    value = interpreter.interpret(expression)
-
-    print(expression)
-    print(f"Expression value = {value}")
+    interpreter.interpret(statements)
 
 
 if __name__ == "__main__":

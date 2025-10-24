@@ -1,13 +1,22 @@
 from typing import List, Union
 
-from lox.abc import Expr
+from lox.abc import Expr, Stmt
 from lox.error import PloxRuntimeError, runtime_error
 from lox.expr import Binary, Literal, Unary
 from lox.token import Token, TokenType
-from lox.visitor import ExprVisitor
+from lox.visitor import ExprVisitor, StmtVisitor
 
 
-class Interpreter(ExprVisitor):
+class Interpreter(ExprVisitor, StmtVisitor):
+    def visit_print(self, stmt):
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+        return None
+
+    def visit_expression(self, stmt):
+        value = self.evaluate(stmt.expression)
+        return None
+
     def visit_literal(self, expr: Literal):
         return expr.value
 
@@ -51,6 +60,8 @@ class Interpreter(ExprVisitor):
                 return left * right
             case TokenType.SLASH:
                 self.check(expr.op, [left, right])
+                if right == 0:
+                    raise PloxRuntimeError(expr.op, "Division by zero.")
                 return left / right
             case TokenType.PLUS:
                 if isinstance(left, float) and isinstance(right, float):
@@ -88,12 +99,18 @@ class Interpreter(ExprVisitor):
             if not isinstance(op, float):
                 raise PloxRuntimeError(operator, "Operand must be a number.")
 
-    def interpret(self, expr: Expr):
-        try:
-            value = self.evaluate(expr)
-            return value
-        except PloxRuntimeError as e:
-            runtime_error(e)
+    def interpret(self, stmts: Union[Stmt, List[Stmt]]):
+        if not isinstance(stmts, list):
+            stmts = [stmts]
+
+        for stmt in stmts:
+            try:
+                self.execute(stmt)
+            except PloxRuntimeError as error:
+                runtime_error(error)
+
+    def execute(self, stmt: Stmt):
+        stmt.accept(self)
 
     def stringify(self, value: object):
         if value is None:
