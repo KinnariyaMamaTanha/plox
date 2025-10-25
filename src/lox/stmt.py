@@ -101,6 +101,7 @@ class Return(Stmt):
 @dataclass
 class Class(Stmt):
     name: Token
+    super_cls: Expr | None
     methods: List[Function]
 
     def accept(self, visitor: StmtVisitor):

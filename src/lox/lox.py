@@ -5,7 +5,7 @@ from typing import List
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
-from lox.error import has_error, has_runtime_error
+from lox import error
 from lox.interpreter import Interpreter
 from lox.parser import Parser
 from lox.resolver import Resolver
@@ -31,11 +31,9 @@ def run_file(path):
     with open(path, "r") as file:
         source = file.read()
     run(source)
-    global has_error
-    if has_error:
+    if error.has_error:
         exit(65)
-    global has_runtime_error
-    if has_runtime_error:
+    if error.has_runtime_error:
         exit(70)
 
 
@@ -43,7 +41,6 @@ def run_prompt():
     """
     Start a REPL (Read-Eval-Print Loop) for Lox.
     """
-    global has_error
     history = InMemoryHistory()
     print("======================================================")
     print("Welcome to plox! Press Ctrl+D or type 'exit' to leave.")
@@ -56,7 +53,8 @@ def run_prompt():
                 break
             if source.strip():
                 run(source)
-                has_error = False
+                # Reset compile-time error flag for the next REPL input
+                error.has_error = False
         except EOFError:
             break
         except KeyboardInterrupt:
@@ -70,14 +68,13 @@ def run(source: str):
     tokens: List[Token] = scanner.scan_tokens()
     parser = Parser(tokens)
     statements = parser.parse()
-    global has_error
-    if has_error:
+    if error.has_error:
         return
 
     interpreter = Interpreter()
     resolver = Resolver(interpreter)
     resolver.resolve(statements)
-    if has_error:
+    if error.has_error:
         return
 
     interpreter.interpret(statements)

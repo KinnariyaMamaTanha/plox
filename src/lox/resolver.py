@@ -12,6 +12,7 @@ from lox.expr import (
     Literal,
     Logical,
     Set,
+    Super,
     This,
     Unary,
     Variable,
@@ -32,6 +33,7 @@ class FunctionType(Enum):
 class ClassType(Enum):
     NONE = 0
     CLASS = 1
+    SUBCLASS = 2
 
 
 class Resolver(ExprVisitor, StmtVisitor):
@@ -142,6 +144,15 @@ class Resolver(ExprVisitor, StmtVisitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
+        if stmt.super_cls is not None:
+            if stmt.name.lexeme == stmt.super_cls.name.lexeme:
+                error(stmt.super_cls.name, "A class cannot inherit from itself.")
+            self.current_cls = ClassType.SUBCLASS
+            self._resolve(stmt.super_cls)
+
+            self.begin_scope()
+            self.scopes[-1]["super"] = True
+
         self.begin_scope()
         self.scopes[-1]["this"] = True
         for method in stmt.methods:
@@ -150,6 +161,9 @@ class Resolver(ExprVisitor, StmtVisitor):
                 declaration = FunctionType.INITIALIZER
             self._resolve_function(method, declaration)
         self.end_scope()
+
+        if stmt.super_cls is not None:
+            self.end_scope()
 
         self.current_cls = enclosing_cls
 
@@ -163,6 +177,14 @@ class Resolver(ExprVisitor, StmtVisitor):
     def visit_this(self, expr: This):
         if self.current_cls == ClassType.NONE:
             error(expr.keyword, "Cannot use 'this' outside of a class.")
+        self._resolve_local(expr, expr.keyword)
+
+    def visit_super(self, expr: Super):
+        if self.current_cls == ClassType.NONE:
+            error(expr.keyword, "Cannot use 'super' outside of a class.")
+        elif self.current_cls != ClassType.SUBCLASS:
+            error(expr.keyword, "Cannot use 'super' in a class with no superclass.")
+
         self._resolve_local(expr, expr.keyword)
 
     def visit_binary(self, expr: Binary):

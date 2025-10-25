@@ -17,6 +17,7 @@ from lox.expr import (
     Grouping,
     Literal,
     Set,
+    Super,
     This,
     Unary,
     Variable,
@@ -117,12 +118,30 @@ class Interpreter(ExprVisitor, StmtVisitor):
             self.environment = previous_env
 
     def visit_class(self, stmt: Class):
+        super_cls = None
+        if stmt.super_cls is not None:
+            super_cls = self.evaluate(stmt.super_cls)
+            if not isinstance(super_cls, LoxClass):
+                raise PloxRuntimeError(
+                    stmt.super_cls.name, "Superclass must be a class."
+                )
         self.environment.define(stmt.name.lexeme, None)
+
+        if stmt.super_cls is not None:
+            self.environment = Environment(enclosing=self.environment)
+            self.environment.define("super", super_cls)
+
         methods: Dict[str, LoxFunction] = {}
         for method in stmt.methods:
             fun = LoxFunction(method, self.environment, method.name.lexeme == "init")
             methods[method.name.lexeme] = fun
-        self.environment.assign(stmt.name, LoxClass(stmt.name.lexeme, methods))
+
+        if super_cls is not None:
+            self.environment = self.environment.enclosing
+
+        self.environment.assign(
+            stmt.name, LoxClass(stmt.name.lexeme, super_cls, methods)
+        )
 
     def visit_get(self, expr: Get):
         obj = self.evaluate(expr.object)
@@ -140,6 +159,17 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def visit_this(self, expr: This):
         return self.lookup_variable(expr, expr.keyword)
+
+    def visit_super(self, expr: Super):
+        distance = self.locals.get(expr)
+        super_cls: LoxClass = self.environment.get_at(distance, "super")
+        obj = self.environment.get_at(distance - 1, "this")
+        method = super_cls.find_method(expr.method.lexeme)
+        if method is None:
+            raise PloxRuntimeError(
+                expr.method, f"Undefined property '{expr.method.lexeme}'."
+            )
+        return method.bind(obj)
 
     def visit_variable(self, expr: Variable):
         return self.lookup_variable(expr, expr.name)

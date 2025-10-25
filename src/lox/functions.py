@@ -69,8 +69,11 @@ class LoxFunction(LoxCallable):
 
 
 class LoxClass(LoxCallable):
-    def __init__(self, name: str, methods: Dict[str, LoxFunction]) -> None:
+    def __init__(
+        self, name: str, super_cls: LoxClass | None, methods: Dict[str, LoxFunction]
+    ) -> None:
         self.name = name
+        self.super_cls = super_cls
         self.methods = methods
 
     def __str__(self) -> str:
@@ -83,7 +86,9 @@ class LoxClass(LoxCallable):
         instance = LoxInstance(self)
         initializer = self.find_method("init")
         if initializer is not None:
-            initializer.bind(instance)(interpreter, argument) # first bind 'this' then call
+            initializer.bind(instance)(
+                interpreter, argument
+            )  # first bind 'this' then call
         return instance
 
     def arity(self) -> int:
@@ -95,6 +100,8 @@ class LoxClass(LoxCallable):
     def find_method(self, name: str) -> LoxFunction | None:
         if name in self.methods:
             return self.methods[name]
+        if self.super_cls is not None:
+            return self.super_cls.find_method(name)
         return None
 
 

@@ -11,6 +11,7 @@ from lox.expr import (
     Literal,
     Logical,
     Set,
+    Super,
     This,
     Unary,
     Variable,
@@ -66,15 +67,20 @@ class Parser:
 
     def class_declaration(self) -> Stmt:
         """
-        classDecl → "class" IDENTIFIER "{" function* "}" ;
+        classDecl → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
         """
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        super_cls = None
+        if self.match(TokenType.LESS):
+            super_cls = Variable(
+                self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
+            )
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
         methods = []
         while not self.check(TokenType.RIGHT_BRACE) and not self.finished:
             methods.append(self.function("method"))
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
-        return Class(name, methods)
+        return Class(name, super_cls, methods)
 
     def function(self, kind: str) -> Stmt:
         """
@@ -421,7 +427,7 @@ class Parser:
 
     def primary(self) -> Expr:
         """
-        primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
+        primary → NUMBER | STRING | "true" | "false" | "nil" | "this" | "super" "." IDENTIFIER | "(" expression ")" | IDENTIFIER
         """
         if self.match(TokenType.FALSE):
             return Literal(False)
@@ -433,6 +439,13 @@ class Parser:
             return Literal(self.previous.literal)
         elif self.match(TokenType.THIS):
             return This(self.previous)
+        elif self.match(TokenType.SUPER):
+            keyword = self.previous
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method = self.consume(
+                TokenType.IDENTIFIER, "Expect superclass method name."
+            )
+            return Super(keyword, method)
         elif self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
