@@ -46,24 +46,67 @@ def run_prompt():
     print("Welcome to plox! Press Ctrl+D or type 'exit' to leave.")
     print("======================================================")
 
+    interpreter = Interpreter()
+
+    # Accumulate lines until the input is a complete statement/block
+    buffer: str = ""
+
     while True:
         try:
-            source: str = prompt("plox> ", history=history)
-            if source.strip() == "exit":
+            prompt_label = "plox> " if not buffer else "...   "
+            line: str = prompt(prompt_label, history=history)
+
+            # Allow exiting only when not in the middle of a multi-line entry
+            if not buffer and line.strip() == "exit":
                 break
-            if source.strip():
-                run(source)
+
+            # Ignore pure empty inputs if nothing in buffer yet
+            if not buffer and not line.strip():
+                continue
+
+            buffer += line + "\n"
+
+            if is_complete_source(buffer):
+                run(buffer, interpreter=interpreter)
                 # Reset compile-time error flag for the next REPL input
                 error.has_error = False
+                buffer = ""
         except EOFError:
             break
         except KeyboardInterrupt:
+            # On Ctrl+C, clear current buffer and start over
+            buffer = ""
             continue
         except Exception as e:
             logger.error(f"An error occurred: {e}")
 
 
-def run(source: str):
+def is_complete_source(source: str) -> bool:
+    """Heuristic check to see if the given source is a complete Lox input.
+
+    Rules (basic, not string-aware):
+    - Track parentheses and braces balance across lines.
+    - Consider input complete when both balances are zero AND the last
+      non-comment, non-whitespace significant character is ';' or '}'.
+    """
+    paren = 0
+    brace = 0
+    last_sig = ""
+
+    for raw_line in source.splitlines():
+        line = raw_line.split("//", 1)[0]
+        paren += line.count("(") - line.count(")")
+        brace += line.count("{") - line.count("}")
+        s = line.rstrip()
+        if s:
+            last_sig = s[-1]
+
+    if paren == 0 and brace == 0 and last_sig in {";", "}"}:
+        return True
+    return False
+
+
+def run(source: str, interpreter: Interpreter | None = None):
     scanner = Scanner(source)
     tokens: List[Token] = scanner.scan_tokens()
     parser = Parser(tokens)
@@ -71,13 +114,14 @@ def run(source: str):
     if error.has_error:
         return
 
-    interpreter = Interpreter()
-    resolver = Resolver(interpreter)
+    _interpreter = interpreter or Interpreter()
+    _interpreter.locals.clear()
+    resolver = Resolver(_interpreter)
     resolver.resolve(statements)
     if error.has_error:
         return
 
-    interpreter.interpret(statements)
+    _interpreter.interpret(statements)
 
 
 if __name__ == "__main__":
