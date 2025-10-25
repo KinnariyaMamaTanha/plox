@@ -2,10 +2,23 @@ from typing import List, Union
 
 from lox.abc import Expr, Stmt
 from lox.error import error
-from lox.expr import Assign, Binary, Call, Grouping, Literal, Logical, Unary, Variable
+from lox.expr import (
+    Assign,
+    Binary,
+    Call,
+    Get,
+    Grouping,
+    Literal,
+    Logical,
+    Set,
+    This,
+    Unary,
+    Variable,
+)
 from lox.stmt import (
     Block,
     Break,
+    Class,
     Continue,
     Expression,
     Function,
@@ -36,10 +49,12 @@ class Parser:
 
     def declaration(self) -> Stmt:
         """
-        declaration → varDecl | funDecl | statement ;
+        declaration → classDecl | varDecl | funDecl | statement ;
         """
         try:
-            if self.match(TokenType.FUN):
+            if self.match(TokenType.CLASS):
+                return self.class_declaration()
+            elif self.match(TokenType.FUN):
                 return self.function("function")
             elif self.match(TokenType.VAR):
                 return self.var_decl()
@@ -48,6 +63,18 @@ class Parser:
         except ParseError:
             self.synchronize()
             return None
+
+    def class_declaration(self) -> Stmt:
+        """
+        classDecl → "class" IDENTIFIER "{" function* "}" ;
+        """
+        name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+        methods = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.finished:
+            methods.append(self.function("method"))
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+        return Class(name, methods)
 
     def function(self, kind: str) -> Stmt:
         """
@@ -246,7 +273,7 @@ class Parser:
 
     def assignment(self) -> Expr:
         """
-        assignment → IDENTIFIER "=" assignment | logic_or ;
+        assignment → ( call "." )? IDENTIFIER "=" assignment | logic_or ;
         """
         expr = self.logic_or()
 
@@ -257,6 +284,9 @@ class Parser:
             if isinstance(expr, Variable):
                 name_token = expr.name
                 return Assign(name_token, value)
+            elif isinstance(expr, Get):
+                get: Get = expr
+                return Set(get.object, get.name, value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -364,6 +394,11 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self._finish_call(expr)
+            elif self.match(TokenType.DOT):
+                name = self.consume(
+                    TokenType.IDENTIFIER, "Expect property name after '.'."
+                )
+                expr = Get(expr, name)
             else:
                 break
 
@@ -396,6 +431,8 @@ class Parser:
             return Literal(None)
         elif self.match([TokenType.NUMBER, TokenType.STRING]):
             return Literal(self.previous.literal)
+        elif self.match(TokenType.THIS):
+            return This(self.previous)
         elif self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")

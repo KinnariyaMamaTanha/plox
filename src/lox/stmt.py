@@ -96,3 +96,12 @@ class Return(Stmt):
 
     def accept(self, visitor: StmtVisitor):
         return visitor.visit_return(self)
+
+
+@dataclass
+class Class(Stmt):
+    name: Token
+    methods: List[Function]
+
+    def accept(self, visitor: StmtVisitor):
+        return visitor.visit_class(self)

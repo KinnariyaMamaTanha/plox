@@ -9,10 +9,22 @@ from lox.error import (
     ReturnException,
     runtime_error,
 )
-from lox.expr import Assign, Binary, Call, Grouping, Literal, Unary, Variable
-from lox.functions import Clock, LoxCallable, LoxFunction
+from lox.expr import (
+    Assign,
+    Binary,
+    Call,
+    Get,
+    Grouping,
+    Literal,
+    Set,
+    This,
+    Unary,
+    Variable,
+)
+from lox.functions import Clock, LoxCallable, LoxClass, LoxFunction, LoxInstance
 from lox.stmt import (
     Block,
+    Class,
     Continue,
     Expression,
     Function,
@@ -103,6 +115,31 @@ class Interpreter(ExprVisitor, StmtVisitor):
                 self.execute(statement)
         finally:
             self.environment = previous_env
+
+    def visit_class(self, stmt: Class):
+        self.environment.define(stmt.name.lexeme, None)
+        methods: Dict[str, LoxFunction] = {}
+        for method in stmt.methods:
+            fun = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            methods[method.name.lexeme] = fun
+        self.environment.assign(stmt.name, LoxClass(stmt.name.lexeme, methods))
+
+    def visit_get(self, expr: Get):
+        obj = self.evaluate(expr.object)
+        if isinstance(obj, LoxInstance):
+            return obj[expr.name]
+        raise PloxRuntimeError(expr.name, "Only instances have properties.")
+
+    def visit_set(self, expr: Set):
+        obj = self.evaluate(expr.object)
+        if not isinstance(obj, LoxInstance):
+            raise PloxRuntimeError(expr.name, "Only instances have fields.")
+        value = self.evaluate(expr.value)
+        obj[expr.name] = value
+        return value
+
+    def visit_this(self, expr: This):
+        return self.lookup_variable(expr, expr.keyword)
 
     def visit_variable(self, expr: Variable):
         return self.lookup_variable(expr, expr.name)
@@ -201,7 +238,7 @@ class Interpreter(ExprVisitor, StmtVisitor):
         return func(self, arguments)
 
     def visit_function(self, stmt: Function):
-        fun = LoxFunction(stmt, self.environment)
+        fun = LoxFunction(stmt, self.environment, False)
         self.environment.define(stmt.name.lexeme, fun)
         return None
 

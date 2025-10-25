@@ -29,7 +29,7 @@ class ExprVisitor(Visitor):
     def visit_super(self, expr):
         pass
 
-    def visit_self(self, expr):
+    def visit_this(self, expr):
         pass
 
     def visit_unary(self, expr):
@@ -71,4 +71,7 @@ class StmtVisitor(Visitor):
         pass
 
     def visit_return(self, stmt):
+        pass
+
+    def visit_class(self, stmt):
         pass

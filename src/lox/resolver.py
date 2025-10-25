@@ -3,9 +3,21 @@ from typing import Dict, List, Union
 
 from lox.abc import Expr, Stmt
 from lox.error import error
-from lox.expr import Assign, Binary, Call, Grouping, Literal, Logical, Unary, Variable
+from lox.expr import (
+    Assign,
+    Binary,
+    Call,
+    Get,
+    Grouping,
+    Literal,
+    Logical,
+    Set,
+    This,
+    Unary,
+    Variable,
+)
 from lox.interpreter import Interpreter
-from lox.stmt import Block, Expression, Function, If, Print, Return, Var, While
+from lox.stmt import Block, Class, Expression, Function, If, Print, Return, Var, While
 from lox.token import Token
 from lox.visitor import ExprVisitor, StmtVisitor
 
@@ -14,6 +26,12 @@ class FunctionType(Enum):
     NONE = 0
     FUNCTION = 1
     INITIALIZER = 2
+    METHOD = 3
+
+
+class ClassType(Enum):
+    NONE = 0
+    CLASS = 1
 
 
 class Resolver(ExprVisitor, StmtVisitor):
@@ -23,6 +41,7 @@ class Resolver(ExprVisitor, StmtVisitor):
         # true -> defined, false -> declared but not defined; not exist -> not declared
         self.scopes: List[Dict[str, bool]] = []
         self.current_func = FunctionType.NONE
+        self.current_cls = ClassType.NONE
 
     def begin_scope(self):
         self.scopes.append({})
@@ -116,6 +135,35 @@ class Resolver(ExprVisitor, StmtVisitor):
     def visit_while(self, stmt: While):
         self._resolve(stmt.condition)
         self._resolve(stmt.body)
+
+    def visit_class(self, stmt: Class):
+        enclosing_cls = self.current_cls
+        self.current_cls = ClassType.CLASS
+        self.declare(stmt.name)
+        self.define(stmt.name)
+
+        self.begin_scope()
+        self.scopes[-1]["this"] = True
+        for method in stmt.methods:
+            declaration = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER
+            self._resolve_function(method, declaration)
+        self.end_scope()
+
+        self.current_cls = enclosing_cls
+
+    def visit_get(self, expr: Get):
+        self._resolve(expr.object)
+
+    def visit_set(self, expr: Set):
+        self._resolve(expr.value)
+        self._resolve(expr.object)
+
+    def visit_this(self, expr: This):
+        if self.current_cls == ClassType.NONE:
+            error(expr.keyword, "Cannot use 'this' outside of a class.")
+        self._resolve_local(expr, expr.keyword)
 
     def visit_binary(self, expr: Binary):
         self._resolve(expr.left)

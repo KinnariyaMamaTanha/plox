@@ -90,11 +90,11 @@ class Super(Expr):
 
 
 @dataclass(eq=False)
-class Self(Expr):
+class This(Expr):
     keyword: Token
 
     def accept(self, visitor: ExprVisitor):
-        return visitor.visit_self(self)
+        return visitor.visit_this(self)
 
 
 @dataclass(eq=False)
