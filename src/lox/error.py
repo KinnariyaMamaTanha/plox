@@ -48,6 +48,6 @@ class ReturnException(Exception):
 
 
 def runtime_error(error: PloxRuntimeError):
-    logger.error(error.message + f"\n[line {error.token.line}]")
+    logger.error(f"\n[line {error.token.line}] {error.message}")
     global has_runtime_error
     has_runtime_error = True

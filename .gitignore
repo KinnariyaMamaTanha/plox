@@ -7,3 +7,7 @@
 lox.md
 tmp*
 test.lox
+
+*.spec
+build/
+dist/

@@ -1,4 +1,4 @@
-from lox.lox import is_complete_source
+from utils import is_complete_source
 from lox.interpreter import Interpreter
 from lox.parser import Parser
 from lox.resolver import Resolver

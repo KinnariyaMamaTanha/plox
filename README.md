@@ -8,18 +8,40 @@ I use [uv](https://docs.astral.sh/uv) to manage the environment. To set up the d
 
 ```bash
 uv sync
+source .venv/bin/activate
 ```
 
 ## Run
 
 ```bash
-python -m lox.lox --prompt                # Using REPL
-python -m lox.lox --verbose               # Enable verbose logging
-python -m lox.lox --path path/to/lox/file # Interpret a Lox script
+# Start REPL (no args)
+python plox.py
+
+# Run a Lox script (positional path)
+python plox.py path/to/script.lox
+
+# Enable verbose logs (DEBUG)
+python plox.py --verbose path/to/script.lox
 ```
 
 ## Test
 
 ```bash
 pytest -q
+```
+
+## Build
+
+```bash
+pyinstaller --onefile plox.py --name plox --clean
+```
+
+Then you can find the `plox` executable in folder `./dist`.
+
+You can also run the binary with the same conventions:
+
+```bash
+./dist/plox                 # REPL
+./dist/plox script.lox      # Run a file
+./dist/plox --verbose file.lox
 ```

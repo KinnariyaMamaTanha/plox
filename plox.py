@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from typing import List
 
 from prompt_toolkit import prompt
@@ -11,16 +12,30 @@ from lox.parser import Parser
 from lox.resolver import Resolver
 from lox.scanner import Scanner
 from lox.token import Token
-from utils import validate_args
+from utils import is_complete_source, validate_args
 
 logger = logging.getLogger(__name__)
 
 
 def main(args: argparse.Namespace):
+    """Entrypoint for the CLI.
+
+    Behavior:
+    - No positional arguments -> start REPL (run_prompt)
+    - One positional argument (FILE) -> execute file (run_file)
+    - --verbose enables DEBUG-level logs
+    """
+    logger.debug(f"Parsed args: {args}")
     validate_args(args)
-    if args.path:
-        run_file(args.path)
+
+    # Only positional FILE is supported
+    path = getattr(args, "file", None)
+
+    if path:
+        logger.debug(f"Running file: {path}")
+        run_file(path)
     else:
+        logger.debug("Starting REPL (run_prompt)")
         run_prompt()
 
 
@@ -28,13 +43,15 @@ def run_file(path):
     """
     Execute a Lox script from a file.
     """
+    logger.debug(f"Reading file from path: {path}")
     with open(path, "r") as file:
         source = file.read()
+    logger.debug(f"Read {len(source)} characters from file")
     run(source)
     if error.has_error:
-        exit(65)
+        sys.exit(65)
     if error.has_runtime_error:
-        exit(70)
+        sys.exit(70)
 
 
 def run_prompt():
@@ -67,6 +84,7 @@ def run_prompt():
             buffer += line + "\n"
 
             if is_complete_source(buffer):
+                logger.debug(f"Executing REPL buffer with {len(buffer)} characters")
                 run(buffer, interpreter=interpreter)
                 # Reset compile-time error flag for the next REPL input
                 error.has_error = False
@@ -81,36 +99,15 @@ def run_prompt():
             logger.error(f"An error occurred: {e}")
 
 
-def is_complete_source(source: str) -> bool:
-    """Heuristic check to see if the given source is a complete Lox input.
-
-    Rules (basic, not string-aware):
-    - Track parentheses and braces balance across lines.
-    - Consider input complete when both balances are zero AND the last
-      non-comment, non-whitespace significant character is ';' or '}'.
-    """
-    paren = 0
-    brace = 0
-    last_sig = ""
-
-    for raw_line in source.splitlines():
-        line = raw_line.split("//", 1)[0]
-        paren += line.count("(") - line.count(")")
-        brace += line.count("{") - line.count("}")
-        s = line.rstrip()
-        if s:
-            last_sig = s[-1]
-
-    if paren == 0 and brace == 0 and last_sig in {";", "}"}:
-        return True
-    return False
-
-
 def run(source: str, interpreter: Interpreter | None = None):
     scanner = Scanner(source)
     tokens: List[Token] = scanner.scan_tokens()
+    logger.debug(f"Scanned {len(tokens)} tokens")
     parser = Parser(tokens)
     statements = parser.parse()
+    logger.debug(
+        "Parser returned %s statements" % (len(statements) if statements else 0)
+    )
     if error.has_error:
         return
 
@@ -126,14 +123,12 @@ def run(source: str, interpreter: Interpreter | None = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    # Optional positional FILE argument; if provided, we run the file.
     parser.add_argument(
-        "--path",
+        "file",
+        nargs="?",
         default=None,
-        type=str,
-        help="Path to the Lox script to execute",
-    )
-    parser.add_argument(
-        "--prompt", action="store_true", default=False, help="Start REPL mode"
+        help="Path to the Lox script to execute (positional)",
     )
     parser.add_argument(
         "--verbose", action="store_true", default=False, help="Enable verbose logging"
@@ -142,8 +137,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO if args.verbose else logging.WARNING,
-        format="[pid=%(process)d %(asctime)s %(levelname)s] %(filename)s, line %(lineno)d: %(message)s",
+        level=logging.DEBUG if args.verbose else logging.WARNING,
+        format="%(levelname)s: %(message)s",
     )
 
     main(args)
